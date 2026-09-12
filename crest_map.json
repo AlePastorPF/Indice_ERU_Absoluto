@@ -1,0 +1,18 @@
+{
+  "_comment": "Mapea el código de rival (extraído de la columna Actividad, patrón 'SIC vs <rival>') al archivo de escudo en assets/logos/. El equipo propio (SIC) también se lista para el header del dashboard. Un rival sin entrada acá cae al ícono genérico de pelota (dibujado en dashboard/app.js, no es un archivo).",
+  "SIC": "SIC.png",
+  "Alumni": "Alumni.png",
+  "BA": "BA.png",
+  "BAC": "BAC.png",
+  "CASI": "CASI.png",
+  "CRBV": "CRBV.jpg",
+  "CUBA": "CUBA.png",
+  "Champagnat": "Champagnat.jpg",
+  "Hindu": "Hindu.png",
+  "LMRC": "Los_Matreros.png",
+  "LPRC": "La_Plata.jpg",
+  "LosTilos": "Los_Tilos.jpg",
+  "Newman": "Newman.png",
+  "Plaza": "Plaza.png",
+  "_sin_logo": ["SanLuis"]
+}

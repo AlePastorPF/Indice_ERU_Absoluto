@@ -1,63 +1,93 @@
 # Índice ERU — San Isidro Club
 
-Dashboard que lee `SIC_Carga.xlsx` directamente desde este repositorio
-cada vez que se abre. No hace falta reconstruir nada: cuando reemplaces
-el Excel por una versión nueva (mismo nombre de archivo, misma hoja
-"GPS", mismas columnas), el sitio va a reflejar los datos actualizados
-en la próxima carga de la página.
+Dashboard interactivo de rendimiento GPS para el plantel de San Isidro Club (SIC),
+construido alrededor de un indicador propio de carga/esfuerzo por sesión: el
+**Índice ERU**.
 
-## Subir los archivos (primera vez)
+El sitio publicado es un único archivo HTML autocontenido (sin dependencias
+externas en tiempo de ejecución): filtros en cascada, tarjetas de máximas
+prestaciones, un scatter Índice ERU vs. Duración con escudos por rival, y una
+tabla ordenable con escala de color.
 
-1. Entrá a tu repo: https://github.com/AlePastorPF/Indice-Esfuerzo-RU
-2. Botón **Add file → Upload files**.
-3. Arrastrá `index.html` y `SIC_Carga.xlsx` (los dos, sueltos en la
-   raíz del repo — no en una subcarpeta).
-4. Commit.
+## Cómo se calcula el Índice ERU
 
-## Activar GitHub Pages
+Para cada sesión (`Periodo = "Session"`) se ponderan cinco métricas —
+Duración, Distancia Explosiva, RHIE (bouts totales), BiG (Back in Game, en
+segundos) y Contactos— con pesos distintos según el grupo posicional del
+jugador:
 
-1. En el repo: **Settings → Pages**.
-2. En "Build and deployment" → Source: **Deploy from a branch**.
-3. Branch: **main** (o la que uses), carpeta **/ (root)**.
-4. Guardar. GitHub te va a dar una URL del estilo:
-   `https://alepastorpf.github.io/Indice-Esfuerzo-RU/`
-   (puede tardar 1–2 minutos en estar disponible la primera vez).
+| Grupo posicional         | Duración | Dist Exp | RHIE | BiG | Contactos |
+|---------------------------|:--:|:--:|:--:|:--:|:--:|
+| Primera Línea              | 10% | 20% | 20% | 25% | 25% |
+| Segunda/Tercera Línea       | 10% | 20% | 15% | 25% | 30% |
+| Medio Scrum                 | 20% | 20% | 25% | 15% | 10% |
+| Backs Internos (Apertura, Centro) | 20% | 25% | 25% | 15% | 15% |
+| Backs Externos (Wing, Fullback)   | 20% | 35% | 25% | 10% | 10% |
 
-## Actualizar los datos más adelante
+Cada métrica se normaliza min–max **dentro de la temporada correspondiente**
+(considerando todos los puestos y actividades de esa temporada). BiG se
+invierte antes de ponderar, porque un valor menor indica mejor desempeño.
 
-1. Entrá al repo → click en `SIC_Carga.xlsx` → ícono de lápiz
-   (o simplemente "Add file → Upload files" de nuevo, arrastrando el
-   Excel nuevo con el mismo nombre para que lo sobrescriba).
-2. Commit.
-3. Recargá la página del dashboard (puede tardar uno o dos minutos en
-   propagarse el cambio en GitHub Pages). El sitio va a recalcular
-   todo — Índice ERU, tarjetas, tabla, gráfico y filtros — con los
-   datos nuevos, sin que yo tenga que tocar nada.
+El resultado se expresa de dos formas:
+- **Unidades arbitrarias** (0–100 aprox.): la suma ponderada de las cinco
+  métricas normalizadas.
+- **% del máximo**: el 100% de cada jugador corresponde a su propio partido
+  de mayor Índice ERU dentro de la temporada seleccionada. Si un jugador no
+  disputó partidos esa temporada, se usa su mejor registro de entrenamiento
+  como referencia. Esta referencia se fija una sola vez por jugador y
+  temporada, y no cambia al aplicar filtros de puesto o actividad.
 
-## Importante — el repo es público
+## Estructura del repo
 
-Como el repositorio es público, el archivo `SIC_Carga.xlsx` (y por lo
-tanto los datos de los jugadores) va a ser descargable por cualquiera
-que tenga el link, aunque no sea evidente a simple vista. Si en algún
-momento preferís que los datos no sean accesibles públicamente,
-avisame y armamos la variante con GitHub Actions (recalcula todo del
-lado del servidor y solo publica el resultado ya procesado) o
-recomendamos pasar el repo a privado con un plan de GitHub que
-soporte Pages privado.
+```
+data/SIC_Carga.xlsx        Planilla fuente (GPS, hoja "GPS")
+assets/logos/               Escudos de SIC y rivales (el ícono de pelota para
+                             entrenamientos y rivales sin escudo se genera en
+                             app.js, no es un archivo)
+crest_map.json              Mapeo código de rival → archivo de escudo
+dashboard/template.html     Estructura, CSS y placeholders del dashboard
+dashboard/app.js            Lógica de filtros, tarjetas, tabla y gráfico
+vendor/chart.umd.js         Chart.js 4.4.1 vendorizado (sin CDN)
+scripts/build_dashboard.py  Calcula el Índice ERU e inyecta todo en el HTML
+dist/index.html             Salida del build (generada, no versionada)
+```
 
-## Qué cambia respecto a la versión anterior
+## Build local
 
-- El archivo ya no lleva los datos "horneados" adentro — los lee del
-  Excel en el momento de abrir la página, usando la librería SheetJS
-  (incluida en el propio `index.html`, no depende de internet salvo
-  para bajar el Excel del repo).
-- Toda la lógica (ponderaciones por puesto, normalización por
-  temporada, detección de rivales, filtros cruzados, etc.) es la
-  misma que ya validamos juntos — solo cambió dónde se ejecuta: antes
-  se calculaba una vez al generar el archivo, ahora se calcula en el
-  navegador cada vez que se abre la página.
-- Si la hoja `GPS` cambia de nombre, o alguna de las columnas usadas
-  (Jugador, Periodo, Actividad, Puesto, Dist Exp, RHIE Total Bouts,
-  # BiG, Contactos, Duracion (min), Etiqueta de Actividad, Temporada)
-  cambia de posición, el dashboard va a mostrar un mensaje de error
-  claro en lugar de romperse en silencio.
+```bash
+pip install -r requirements.txt
+python scripts/build_dashboard.py
+# genera dist/index.html — abrilo directo en el navegador
+```
+
+## Actualizar datos o escudos
+
+1. Reemplazá `data/SIC_Carga.xlsx` por la planilla actualizada (misma
+   estructura de columnas, hoja `GPS`).
+2. Si aparece un rival nuevo, sumá su escudo en `assets/logos/` y su entrada
+   en `crest_map.json` (código de rival tal como aparece después de
+   `"SIC vs "` en la columna Actividad, sin sufijos `(Int)`/`2`/`Semi`/etc.).
+3. Corré `python scripts/build_dashboard.py` para regenerar `dist/index.html`,
+   o simplemente hacé push a `main`: el workflow de GitHub Actions
+   (`.github/workflows/deploy.yml`) reconstruye y publica el sitio en
+   GitHub Pages automáticamente.
+
+## Notas de datos y supuestos
+
+- Se usa exclusivamente `Periodo = "Session"`, para evitar doble conteo de
+  bloques/tramos parciales dentro de una misma sesión.
+- "RHIE" corresponde a la columna `RHIE Total Bouts`; "BiG" corresponde a
+  `# BiG` (segundos, decimal) — se descartaron BiG (Largo/Medio/Corto) por
+  ser conteos, no tiempos.
+- Se excluye 1 registro con Puesto en blanco y 1 con Duración vacía.
+- 176 registros con Dist Exp/RHIE/BiG/Contactos en cero se conservan
+  (mayormente entrada en calor): son el piso natural de la normalización.
+- 30 combinaciones jugador+actividad+fecha aparecen duplicadas en el archivo
+  original; se conservan ambos registros tal como están en la fuente.
+- Los rivales sin escudo provisto (ver `_sin_logo` en `crest_map.json`) usan
+  el ícono genérico de pelota, igual que todos los entrenamientos.
+
+## Stack
+
+Python (pandas/openpyxl) para el build · Chart.js 4.4.1 vendorizado · HTML/CSS/JS
+sin frameworks · GitHub Actions + GitHub Pages para CI/CD.
