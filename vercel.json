@@ -2,7 +2,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "python3 -m pip install -r requirements.txt",
-  "buildCommand": "python3 scripts/build_dashboard.py",
+  "installCommand": "python3 -m venv /tmp/eru-venv && /tmp/eru-venv/bin/python -m pip install -r requirements.txt",
+  "buildCommand": "/tmp/eru-venv/bin/python scripts/build_dashboard.py",
   "outputDirectory": "dist"
 }
